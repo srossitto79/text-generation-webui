@@ -176,6 +176,9 @@ def get_stopping_strings(state):
             f"\n{state['name2']}:"
         ]
 
+    if 'stopping_strings' in state and isinstance(state['stopping_strings'], list):
+        stopping_strings += state.pop('stopping_strings')
+
     return stopping_strings
 
 
@@ -263,18 +266,21 @@ def chatbot_wrapper(text, state, regenerate=False, _continue=False, loading_mess
 
 
 def impersonate_wrapper(text, state):
+
+    static_output = chat_html_wrapper(state['history'], state['name1'], state['name2'], state['mode'], state['chat_style'])
+
     if shared.model_name == 'None' or shared.model is None:
         logger.error("No model is loaded! Select one in the Model tab.")
-        yield ''
+        yield '', static_output
         return
 
     prompt = generate_chat_prompt('', state, impersonate=True)
     stopping_strings = get_stopping_strings(state)
 
-    yield text + '...'
+    yield text + '...', static_output
     reply = None
     for reply in generate_reply(prompt + text, state, stopping_strings=stopping_strings, is_chat=True):
-        yield (text + reply).lstrip(' ')
+        yield (text + reply).lstrip(' '), static_output
         if shared.stop_everything:
             return
 
@@ -459,12 +465,17 @@ def load_character(character, name1, name2, instruct=False):
     greeting_field = 'greeting'
     picture = None
 
-    # Deleting the profile picture cache, if any
+    # Delete the profile picture cache, if any
     if Path("cache/pfp_character.png").exists() and not instruct:
         Path("cache/pfp_character.png").unlink()
 
+    if instruct:
+        name1 = name2 = ''
+        folder = 'instruction-templates'
+    else:
+        folder = 'characters'
+
     if character not in ['None', '', None]:
-        folder = 'characters' if not instruct else 'instruction-templates'
         picture = generate_pfp_cache(character)
         filepath = None
         for extension in ["yml", "yaml", "json"]:

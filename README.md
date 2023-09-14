@@ -11,7 +11,7 @@ Its goal is to become the [AUTOMATIC1111/stable-diffusion-webui](https://github.
 ## Features
 
 * 3 interface modes: default (two columns), notebook, and chat
-* Multiple model backends: [transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/ggerganov/llama.cpp), [ExLlama](https://github.com/turboderp/exllama), [AutoGPTQ](https://github.com/PanQiWei/AutoGPTQ), [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa), [ctransformers](https://github.com/marella/ctransformers)
+* Multiple model backends: [transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/ggerganov/llama.cpp), [ExLlama](https://github.com/turboderp/exllama), [ExLlamaV2](https://github.com/turboderp/exllamav2), [AutoGPTQ](https://github.com/PanQiWei/AutoGPTQ), [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa), [CTransformers](https://github.com/marella/ctransformers)
 * Dropdown menu for quickly switching between different models
 * LoRA: load and unload LoRAs on the fly, train a new LoRA using QLoRA
 * Precise instruction templates for chat mode, including Llama-2-chat, Alpaca, Vicuna, WizardLM, StableLM, and many others
@@ -75,11 +75,6 @@ conda activate textgen
 
 The up-to-date commands can be found here: https://pytorch.org/get-started/locally/. 
 
-#### 2.1 Additional information
-
-* MacOS users: https://github.com/oobabooga/text-generation-webui/pull/393
-* AMD users: https://rentry.org/eq3hg
-
 #### 3. Install the web UI
 
 ```
@@ -88,17 +83,28 @@ cd text-generation-webui
 pip install -r requirements.txt
 ```
 
-#### llama.cpp on AMD, Metal, and some specific CPUs
+#### AMD, Metal, Intel Arc, and CPUs without AVX2
 
-Precompiled wheels are included for CPU-only and NVIDIA GPUs (cuBLAS). For AMD, Metal, and some specific CPUs, you need to uninstall those wheels and compile llama-cpp-python yourself.
-
-To uninstall:
+1) Replace the last command above with
 
 ```
-pip uninstall -y llama-cpp-python llama-cpp-python-cuda
+pip install -r requirements_nocuda.txt
 ```
 
-To compile: https://github.com/abetlen/llama-cpp-python#installation-with-openblas--cublas--clblast--metal
+2) Manually install llama-cpp-python using the appropriate command for your hardware: [Installation from PyPI](https://github.com/abetlen/llama-cpp-python#installation-from-pypi).
+   
+3) Do the same for CTransformers: [Installation](https://github.com/marella/ctransformers#installation).
+
+4) AMD: Manually install AutoGPTQ: [Installation](https://github.com/PanQiWei/AutoGPTQ#installation).
+
+5) AMD: Manually install [ExLlama](https://github.com/turboderp/exllama) by simply cloning it into the `repositories` folder (it will be automatically compiled at runtime after that):
+
+```
+cd text-generation-webui
+mkdir repositories
+cd repositories
+git clone https://github.com/turboderp/exllama
+```
 
 #### bitsandbytes on older NVIDIA GPUs
 
@@ -154,9 +160,7 @@ text-generation-webui
 │   │   └── tokenizer.model
 ```
 
-In the "Model" tab of the UI, those models can be automatically downloaded from Hugging Face. You can also download them via the command-line with `python download-model.py organization/model`.
-
-* GGML models are a single file and should be placed directly into `models`. Example:
+* GGUF models are a single file and should be placed directly into `models`. Example:
 
 ```
 text-generation-webui
@@ -164,7 +168,7 @@ text-generation-webui
 │   ├── llama-13b.ggmlv3.q4_K_M.bin
 ```
 
-Those models must be downloaded manually, as they are not currently supported by the automated downloader.
+In both cases, you can use the "Model" tab of the UI to download the model from Hugging Face automatically. It is also possible to download via the command-line with `python download-model.py organization/model` (use `--help` to see all the options).
 
 #### GPT-4chan
 
@@ -258,7 +262,7 @@ Optionally, you can use the following command-line flags:
 | `--quant_type QUANT_TYPE`                   | quant_type for 4-bit. Valid options: nf4, fp4. |
 | `--use_double_quant`                        | use_double_quant for 4-bit. |
 
-#### GGML (for llama.cpp and ctransformers)
+#### GGUF (for llama.cpp and ctransformers)
 
 | Flag        | Description |
 |-------------|-------------|
@@ -269,17 +273,16 @@ Optionally, you can use the following command-line flags:
 
 #### llama.cpp
 
-| Flag        | Description |
-|-------------|-------------|
-| `--no-mmap` | Prevent mmap from being used. |
-| `--mlock`   | Force the system to keep the model in RAM. |
+| Flag          | Description |
+|---------------|---------------|
+| `--no-mmap`   | Prevent mmap from being used. |
+| `--mlock`     | Force the system to keep the model in RAM. |
 | `--mul_mat_q` | Activate new mulmat kernels. |
 | `--cache-capacity CACHE_CAPACITY`   | Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed. |
-| `--tensor_split TENSOR_SPLIT` | Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17 |
-| `--llama_cpp_seed SEED` | Seed for llama-cpp models. Default 0 (random). |
-| `--n_gqa N_GQA`         | grouped-query attention. Must be 8 for llama-2 70b. |
-| `--rms_norm_eps RMS_NORM_EPS`  | 5e-6 is a good value for llama-2 models. |
+| `--tensor_split TENSOR_SPLIT`  | Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17 |
+| `--llama_cpp_seed SEED`        | Seed for llama-cpp models. Default 0 (random). |
 | `--cpu`                        | Use the CPU version of llama-cpp-python instead of the GPU-accelerated version. |
+|`--cfg-cache`                   | llamacpp_HF: Create an additional cache for CFG negative prompts. |
 
 #### ctransformers
 
@@ -304,6 +307,7 @@ Optionally, you can use the following command-line flags:
 |------------------|-------------|
 |`--gpu-split`     | Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. `20,7,7` |
 |`--max_seq_len MAX_SEQ_LEN`           | Maximum sequence length. |
+|`--cfg-cache`                         | ExLlama_HF: Create an additional cache for CFG negative prompts. Necessary to use CFG with that loader, but not necessary for CFG with base ExLlama. |
 
 #### GPTQ-for-LLaMa
 
@@ -331,12 +335,13 @@ Optionally, you can use the following command-line flags:
 | `--rwkv-strategy RWKV_STRATEGY` | RWKV: The strategy to use while loading the model. Examples: "cpu fp32", "cuda fp16", "cuda fp16i8". |
 | `--rwkv-cuda-on`                | RWKV: Compile the CUDA kernel for better performance. |
 
-#### RoPE (for llama.cpp, ExLlama, and transformers)
+#### RoPE (for llama.cpp, ExLlama, ExLlamaV2, and transformers)
 
 | Flag             | Description |
 |------------------|-------------|
-|`--alpha_value ALPHA_VALUE`           | Positional embeddings alpha factor for NTK RoPE scaling. Use either this or compress_pos_emb, not both. |
-|`--compress_pos_emb COMPRESS_POS_EMB` | Positional embeddings compression factor. Should typically be set to max_seq_len / 2048. |
+| `--alpha_value ALPHA_VALUE`           | Positional embeddings alpha factor for NTK RoPE scaling. Use either this or compress_pos_emb, not both. |
+| `--rope_freq_base ROPE_FREQ_BASE`     | If greater than 0, will be used instead of alpha_value. Those two are related by rope_freq_base = 10000 * alpha_value ^ (64 / 63). |
+| `--compress_pos_emb COMPRESS_POS_EMB` | Positional embeddings compression factor. Should be set to (context length) / (model's original context length). Equal to 1/rope_freq_scale. |
 
 #### Gradio
 

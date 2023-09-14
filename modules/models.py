@@ -18,9 +18,9 @@ from transformers import (
 )
 
 import modules.shared as shared
-from modules import llama_attn_hijack, sampler_hijack
+from modules import RoPE, llama_attn_hijack, sampler_hijack
 from modules.logging_colors import logger
-from modules.models_settings import infer_loader
+from modules.models_settings import get_model_metadata
 
 transformers.logging.set_verbosity_error()
 
@@ -59,18 +59,16 @@ def load_model(model_name, loader=None):
         'RWKV': RWKV_loader,
         'ExLlama': ExLlama_loader,
         'ExLlama_HF': ExLlama_HF_loader,
+        'ExLlamav2': ExLlamav2_loader,
+        'ExLlamav2_HF': ExLlamav2_HF_loader,
         'ctransformers': ctransformers_loader,
     }
-
-    p = Path(model_name)
-    if p.exists():
-        model_name = p.parts[-1]
 
     if loader is None:
         if shared.args.loader is not None:
             loader = shared.args.loader
         else:
-            loader = infer_loader(model_name)
+            loader = get_model_metadata(model_name)['loader']
             if loader is None:
                 logger.error('The path to the model does not exist. Exiting.')
                 return None, None
@@ -219,7 +217,7 @@ def huggingface_loader(model_name):
         if shared.args.compress_pos_emb > 1:
             params['rope_scaling'] = {'type': 'linear', 'factor': shared.args.compress_pos_emb}
         elif shared.args.alpha_value > 1:
-            params['rope_scaling'] = {'type': 'dynamic', 'factor': shared.args.alpha_value}
+            params['rope_scaling'] = {'type': 'dynamic', 'factor': RoPE.get_alpha_value(shared.args.alpha_value, shared.args.rope_freq_base)}
 
         model = LoaderClass.from_pretrained(checkpoint, **params)
 
@@ -241,7 +239,7 @@ def llamacpp_loader(model_name):
     if path.is_file():
         model_file = path
     else:
-        model_file = list(Path(f'{shared.args.model_dir}/{model_name}').glob('*ggml*.bin'))[0]
+        model_file = list(Path(f'{shared.args.model_dir}/{model_name}').glob('*.gguf'))[0]
 
     logger.info(f"llama.cpp weights detected: {model_file}")
     model, tokenizer = LlamaCppModel.from_pretrained(model_file)
@@ -280,7 +278,16 @@ def ctransformers_loader(model_name):
         if path.is_file():
             model_file = path
         else:
-            model_file = list(Path(f'{shared.args.model_dir}/{model_name}').glob('*.bin'))[0]
+            entries = Path(f'{shared.args.model_dir}/{model_name}')
+            gguf = list(entries.glob('*.gguf'))
+            bin = list(entries.glob('*.bin'))
+            if len(gguf) > 0:
+                model_file = gguf[0]
+            elif len(bin) > 0:
+                model_file = bin[0]
+            else:
+                logger.error("Could not find a model for ctransformers.")
+                return None, None
 
     logger.info(f'ctransformers weights detected: {model_file}')
     model, tokenizer = ctrans.from_pretrained(model_file)
@@ -322,6 +329,19 @@ def ExLlama_HF_loader(model_name):
     from modules.exllama_hf import ExllamaHF
 
     return ExllamaHF.from_pretrained(model_name)
+
+
+def ExLlamav2_loader(model_name):
+    from modules.exllamav2 import Exllamav2Model
+
+    model, tokenizer = Exllamav2Model.from_pretrained(model_name)
+    return model, tokenizer
+
+
+def ExLlamav2_HF_loader(model_name):
+    from modules.exllamav2_hf import Exllamav2HF
+
+    return Exllamav2HF.from_pretrained(model_name)
 
 
 def get_max_memory_dict():
