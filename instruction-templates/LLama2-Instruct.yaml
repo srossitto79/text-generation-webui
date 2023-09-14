@@ -1,0 +1,3 @@
+user: [INST]<|prompter|>[/INST]
+bot: <|assistant|>
+turn_template: <|user|><|user-message|><|endoftext|><|bot|><|bot-message|><|endoftext|>
