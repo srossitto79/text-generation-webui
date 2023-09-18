@@ -30,7 +30,7 @@ class Exllamav2Model:
         config.max_seq_len = shared.args.max_seq_len
         config.scale_pos_emb = shared.args.compress_pos_emb
         config.scale_alpha_value = shared.args.alpha_value
-        
+
         model = ExLlamaV2(config)
 
         split = None
@@ -48,7 +48,7 @@ class Exllamav2Model:
         result.cache = cache
         result.tokenizer = tokenizer
         result.generator = generator
-        return result, tokenizer
+        return result, result
 
     def generate_with_streaming(self, prompt, state):
         settings = ExLlamaV2Sampler.Settings()
@@ -60,7 +60,12 @@ class Exllamav2Model:
         if state['ban_eos_token']:
             settings.disallow_tokens(self.tokenizer, [self.tokenizer.eos_token_id])
 
-        ids = self.tokenizer.encode(prompt)
+        if state['custom_token_bans']:
+            to_ban = [int(x) for x in state['custom_token_bans'].split(',')]
+            if len(to_ban) > 0:
+                settings.disallow_tokens(self.tokenizer, to_ban)
+
+        ids = self.tokenizer.encode(prompt, add_bos=state['add_bos_token'])
         ids = ids[:, -get_max_prompt_length(state):]
         initial_len = ids.shape[-1]
 
@@ -99,7 +104,17 @@ class Exllamav2Model:
         return output
 
     def encode(self, string, **kwargs):
-        return self.tokenizer.encode(string)
+        return self.tokenizer.encode(string, add_bos=True)
 
-    def decode(self, string, **kwargs):
-        return self.tokenizer.decode(string)[0]
+    def decode(self, ids, **kwargs):
+        if isinstance(ids, list):
+            ids = torch.tensor([ids])
+        elif isinstance(ids, torch.Tensor) and ids.numel() == 1:
+            ids = ids.view(1, -1)
+
+        return self.tokenizer.decode(ids)[0]
+
+    def get_logits(self, token_ids, **kwargs):
+        self.cache.current_seq_len = 0
+        self.model.forward(token_ids[:, :-1], self.cache, input_mask=None, preprocess_only=True)
+        return self.model.forward(token_ids[:, -1:], self.cache, input_mask=None, **kwargs).float().cpu()

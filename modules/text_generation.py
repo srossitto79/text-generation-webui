@@ -106,6 +106,9 @@ def _generate_reply(question, state, stopping_strings=None, is_chat=False, escap
 
 
 def encode(prompt, add_special_tokens=True, add_bos_token=True, truncation_length=None):
+    if shared.tokenizer is None:
+        raise ValueError('No tokenizer is loaded')
+
     if shared.model.__class__.__name__ in ['LlamaCppModel', 'RWKVModel', 'CtransformersModel', 'Exllamav2Model']:
         input_ids = shared.tokenizer.encode(str(prompt))
         if shared.model.__class__.__name__ not in ['Exllamav2Model']:
@@ -133,6 +136,9 @@ def encode(prompt, add_special_tokens=True, add_bos_token=True, truncation_lengt
 
 
 def decode(output_ids, skip_special_tokens=True):
+    if shared.tokenizer is None:
+        raise ValueError('No tokenizer is loaded')
+
     return shared.tokenizer.decode(output_ids, skip_special_tokens)
 
 
@@ -142,6 +148,17 @@ def get_encoded_length(prompt):
         return length_after_extensions
 
     return len(encode(prompt)[0])
+
+
+def get_token_ids(prompt):
+    tokens = encode(prompt)[0]
+    decoded_tokens = [shared.tokenizer.decode([i]) for i in tokens]
+
+    output = ''
+    for row in list(zip(tokens, decoded_tokens)):
+        output += f"{str(int(row[0])).ljust(5)}  -  {repr(row[1])}\n"
+
+    return output
 
 
 def get_max_prompt_length(state):
@@ -265,6 +282,14 @@ def generate_reply_HF(question, original_question, seed, state, stopping_strings
 
     if state['ban_eos_token']:
         generate_params['suppress_tokens'] = [shared.tokenizer.eos_token_id]
+
+    if state['custom_token_bans']:
+        to_ban = [int(x) for x in state['custom_token_bans'].split(',')]
+        if len(to_ban) > 0:
+            if generate_params.get('suppress_tokens', None):
+                generate_params['suppress_tokens'] += to_ban
+            else:
+                generate_params['suppress_tokens'] = to_ban
 
     generate_params.update({'use_cache': not shared.args.no_cache})
     if shared.args.deepspeed:

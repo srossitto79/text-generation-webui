@@ -1,6 +1,7 @@
 import re
 from functools import partial
 
+import numpy as np
 import torch
 
 from modules import RoPE, shared
@@ -28,6 +29,13 @@ def llama_cpp_lib():
 
 def ban_eos_logits_processor(eos_token, input_ids, logits):
     logits[eos_token] = -float('inf')
+    return logits
+
+
+def custom_token_ban_logits_processor(token_ids, input_ids, logits):
+    for token_id in token_ids:
+        logits[token_id] = -float('inf')
+
     return logits
 
 
@@ -90,8 +98,14 @@ class LlamaCppModel:
 
         return self.model.tokenize(string)
 
-    def decode(self, tokens):
-        return self.model.detokenize(tokens)
+    def decode(self, ids):
+        return self.model.detokenize(ids).decode('utf-8')
+
+    def get_logits(self, tokens):
+        self.model.eval(tokens)
+        logits = self.model._scores
+        logits = np.expand_dims(logits, 0)  # batch dim is expected
+        return torch.tensor(logits, dtype=torch.float32)
 
     def generate(self, prompt, state, callback=None):
 
@@ -102,7 +116,16 @@ class LlamaCppModel:
         # Handle truncation
         prompt = self.encode(prompt)
         prompt = prompt[-get_max_prompt_length(state):]
-        prompt = self.decode(prompt).decode('utf-8')
+        prompt = self.decode(prompt)
+
+        logit_processors = LogitsProcessorList()
+        if state['ban_eos_token']:
+            logit_processors.append(partial(ban_eos_logits_processor, self.model.tokenizer.eos_token_id))
+
+        if state['custom_token_bans']:
+            to_ban = [int(x) for x in state['custom_token_bans'].split(',')]
+            if len(to_ban) > 0:
+                logit_processors.append(partial(custom_token_ban_logits_processor, to_ban))
 
         completion_chunks = self.model.create_completion(
             prompt=prompt,
@@ -116,9 +139,7 @@ class LlamaCppModel:
             mirostat_tau=state['mirostat_tau'],
             mirostat_eta=state['mirostat_eta'],
             stream=True,
-            logits_processor=LogitsProcessorList([
-                partial(ban_eos_logits_processor, self.model.token_eos()),
-            ]) if state['ban_eos_token'] else None,
+            logits_processor=logit_processors,
         )
 
         output = ""

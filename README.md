@@ -101,9 +101,7 @@ pip install -r requirements_nocuda.txt
 
 ```
 cd text-generation-webui
-mkdir repositories
-cd repositories
-git clone https://github.com/turboderp/exllama
+git clone https://github.com/turboderp/exllama repositories/exllama
 ```
 
 #### bitsandbytes on older NVIDIA GPUs
@@ -165,7 +163,7 @@ text-generation-webui
 ```
 text-generation-webui
 ├── models
-│   ├── llama-13b.ggmlv3.q4_K_M.bin
+│   ├── llama-2-13b-chat.Q4_K_M.gguf
 ```
 
 In both cases, you can use the "Model" tab of the UI to download the model from Hugging Face automatically. It is also possible to download via the command-line with `python download-model.py organization/model` (use `--help` to see all the options).
@@ -227,6 +225,7 @@ Optionally, you can use the following command-line flags:
 | `--settings SETTINGS_FILE`                 | Load the default interface settings from this yaml file. See `settings-template.yaml` for an example. If you create a file called `settings.yaml`, this file will be loaded by default without the need to use the `--settings` flag. |
 | `--extensions EXTENSIONS [EXTENSIONS ...]` | The list of extensions to load. If you want to load more than one extension, write the names separated by spaces. |
 | `--verbose`                                | Print the prompts to the terminal. |
+| `--chat-buttons`                           | Show buttons on chat tab instead of hover menu. |
 
 #### Model loader
 
