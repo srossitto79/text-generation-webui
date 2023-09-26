@@ -44,6 +44,7 @@ else:
 def list_model_elements():
     elements = [
         'loader',
+        'filter_by_loader',
         'cpu_memory',
         'auto_devices',
         'disk',
@@ -51,6 +52,7 @@ def list_model_elements():
         'bf16',
         'load_in_8bit',
         'trust_remote_code',
+        'use_fast',
         'load_in_4bit',
         'compute_dtype',
         'quant_type',
@@ -114,6 +116,7 @@ def list_interface_input_elements():
         'mirostat_mode',
         'mirostat_tau',
         'mirostat_eta',
+        'grammar_string',
         'negative_prompt',
         'guidance_scale',
         'add_bos_token',
