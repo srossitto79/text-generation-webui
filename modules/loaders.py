@@ -100,6 +100,7 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'compress_pos_emb',
         'cpu',
+        'numa',
     ],
     'llamacpp_HF': [
         'n_ctx',
@@ -115,6 +116,7 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'compress_pos_emb',
         'cpu',
+        'numa',
         'cfg_cache',
         'use_fast',
         'llamacpp_HF_info',
@@ -207,6 +209,7 @@ loaders_samplers = {
         'temperature',
         'top_p',
         'top_k',
+        'typical_p',
         'repetition_penalty',
         'repetition_penalty_range',
         'seed',
