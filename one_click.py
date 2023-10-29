@@ -197,8 +197,10 @@ def install_webui():
 
 def update_requirements(initial_installation=False):
     # Create .git directory if missing
+    #https://github.com/srossitto79/text-generation-webui.git
+    #https://github.com/oobabooga/text-generation-webui
     if not os.path.isdir(os.path.join(script_dir, ".git")):
-        git_creation_cmd = 'git init -b main && git remote add origin https://github.com/oobabooga/text-generation-webui && git fetch && git remote set-head origin -a && git reset origin/HEAD && git branch --set-upstream-to=origin/HEAD'
+        git_creation_cmd = 'git init -b main && git remote add origin https://github.com/srossitto79/text-generation-webui && git fetch && git remote set-head origin -a && git reset origin/HEAD && git branch --set-upstream-to=origin/HEAD'
         run_cmd(git_creation_cmd, environment=True, assert_success=True)
 
     files_to_check = [
