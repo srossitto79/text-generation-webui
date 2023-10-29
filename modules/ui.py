@@ -4,9 +4,9 @@ from pathlib import Path
 import gradio as gr
 import torch
 import yaml
+from transformers import is_torch_xpu_available
 
 from modules import shared
-
 
 with open(Path(__file__).resolve().parent / '../css/NotoSans/stylesheet.css', 'r') as f:
     css = f.read()
@@ -73,7 +73,7 @@ def list_model_elements():
         'n_batch',
         'no_mmap',
         'mlock',
-        'mul_mat_q',
+        'no_mul_mat_q',
         'n_gpu_layers',
         'tensor_split',
         'n_ctx',
@@ -85,9 +85,12 @@ def list_model_elements():
         'rope_freq_base',
         'numa',
     ]
-
-    for i in range(torch.cuda.device_count()):
-        elements.append(f'gpu_memory_{i}')
+    if is_torch_xpu_available():
+        for i in range(torch.xpu.device_count()):
+            elements.append(f'gpu_memory_{i}')
+    else:
+        for i in range(torch.cuda.device_count()):
+            elements.append(f'gpu_memory_{i}')
 
     return elements
 
@@ -105,6 +108,8 @@ def list_interface_input_elements():
         'epsilon_cutoff',
         'eta_cutoff',
         'repetition_penalty',
+        'presence_penalty',
+        'frequency_penalty',
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
