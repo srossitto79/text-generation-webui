@@ -53,6 +53,7 @@ def list_model_elements():
         'load_in_8bit',
         'trust_remote_code',
         'use_fast',
+        'use_flash_attention_2',
         'load_in_4bit',
         'compute_dtype',
         'quant_type',
@@ -68,6 +69,8 @@ def list_model_elements():
         'no_use_cuda_fp16',
         'disable_exllama',
         'cfg_cache',
+        'no_flash_attn',
+        'cache_8bit',
         'threads',
         'threads_batch',
         'n_batch',
@@ -84,6 +87,7 @@ def list_model_elements():
         'alpha_value',
         'rope_freq_base',
         'numa',
+        'logits_all',
     ]
     if is_torch_xpu_available():
         for i in range(torch.xpu.device_count()):
@@ -102,7 +106,9 @@ def list_interface_input_elements():
         'max_tokens_second',
         'seed',
         'temperature',
+        'temperature_last',
         'top_p',
+        'min_p',
         'top_k',
         'typical_p',
         'epsilon_cutoff',
@@ -151,6 +157,8 @@ def list_interface_input_elements():
         'name1_instruct',
         'name2_instruct',
         'context_instruct',
+        'system_message',
+        'custom_system_message',
         'turn_template',
         'chat_style',
         'chat-instruct_command',

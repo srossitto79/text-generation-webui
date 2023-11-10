@@ -25,7 +25,9 @@ def build_parameters(body, chat=False):
         'max_tokens_second': int(body.get('max_tokens_second', 0)),
         'do_sample': bool(body.get('do_sample', True)),
         'temperature': float(body.get('temperature', 0.5)),
+        'temperature_last': bool(body.get('temperature_last', False)),
         'top_p': float(body.get('top_p', 1)),
+        'min_p': float(body.get('min_p', 0)),
         'typical_p': float(body.get('typical_p', body.get('typical', 1))),
         'epsilon_cutoff': float(body.get('epsilon_cutoff', 0)),
         'eta_cutoff': float(body.get('eta_cutoff', 0)),
@@ -72,8 +74,8 @@ def build_parameters(body, chat=False):
         if str(character) == "None":
             character = "Assistant"
 
-        name1, name2, _, greeting, context, _ = load_character_memoized(character, str(body.get('your_name', shared.settings['name1'])), '', instruct=False)
-        name1_instruct, name2_instruct, _, _, context_instruct, turn_template = load_character_memoized(instruction_template, '', '', instruct=True)
+        name1, name2, _, greeting, context, _, _ = load_character_memoized(character, str(body.get('your_name', shared.settings['name1'])), '', instruct=False)
+        name1_instruct, name2_instruct, _, _, context_instruct, turn_template, _ = load_character_memoized(instruction_template, '', '', instruct=True)
         generate_params.update({
             'mode': str(body.get('mode', 'chat')),
             'name1': str(body.get('name1', name1)),
