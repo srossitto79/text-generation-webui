@@ -16,8 +16,10 @@ safetensors==0.4.0
 scipy
 sentencepiece
 tensorboard
-#transformers==4.35.*
+#transformers #==4.35.*
 git+https://github.com/huggingface/transformers.git
+#git+https://github.com/huggingface/transformers@cae78c46
+
 tqdm
 wandb
 
