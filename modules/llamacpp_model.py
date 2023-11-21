@@ -1,7 +1,6 @@
 import re
 from functools import partial
 
-import llama_cpp
 import numpy as np
 import torch
 
@@ -9,6 +8,23 @@ from modules import RoPE, shared
 from modules.callbacks import Iteratorize
 from modules.logging_colors import logger
 from modules.text_generation import get_max_prompt_length
+
+try:
+    import llama_cpp
+except:
+    llama_cpp = None
+
+try:
+    import llama_cpp_cuda
+except:
+    llama_cpp_cuda = None
+
+
+def llama_cpp_lib():
+    if (shared.args.cpu and llama_cpp is not None) or llama_cpp_cuda is None:
+        return llama_cpp
+    else:
+        return llama_cpp_cuda
 
 
 def ban_eos_logits_processor(eos_token, input_ids, logits):
@@ -34,6 +50,10 @@ class LlamaCppModel:
 
     @classmethod
     def from_pretrained(self, path):
+
+        Llama = llama_cpp_lib().Llama
+        LlamaCache = llama_cpp_lib().LlamaCache
+
         result = self()
         cache_capacity = 0
         if shared.args.cache_capacity is not None:
@@ -67,9 +87,9 @@ class LlamaCppModel:
             'rope_freq_scale': 1.0 / shared.args.compress_pos_emb,
         }
 
-        result.model = llama_cpp.Llama(**params)
+        result.model = Llama(**params)
         if cache_capacity > 0:
-            result.model.set_cache(llama_cpp.LlamaCache(capacity_bytes=cache_capacity))
+            result.model.set_cache(LlamaCache(capacity_bytes=cache_capacity))
 
         # This is ugly, but the model and the tokenizer are the same object in this library.
         return result, result
@@ -93,13 +113,13 @@ class LlamaCppModel:
         if string != self.grammar_string:
             self.grammar_string = string
             if string.strip() != '':
-                self.grammar = llama_cpp.LlamaGrammar.from_string(string)
+                self.grammar = llama_cpp_lib().LlamaGrammar.from_string(string)
             else:
                 self.grammar = None
 
     def generate(self, prompt, state, callback=None):
 
-        LogitsProcessorList = llama_cpp.LogitsProcessorList
+        LogitsProcessorList = llama_cpp_lib().LogitsProcessorList
 
         prompt = prompt if type(prompt) is str else prompt.decode()
 

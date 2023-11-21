@@ -11,7 +11,7 @@ Its goal is to become the [AUTOMATIC1111/stable-diffusion-webui](https://github.
 ## Features
 
 * 3 interface modes: default (two columns), notebook, and chat
-* Multiple model backends: [transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/ggerganov/llama.cpp), [ExLlama](https://github.com/turboderp/exllama), [ExLlamaV2](https://github.com/turboderp/exllamav2), [AutoGPTQ](https://github.com/PanQiWei/AutoGPTQ), [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa), [CTransformers](https://github.com/marella/ctransformers), [AutoAWQ](https://github.com/casper-hansen/AutoAWQ)
+* Multiple model backends: [transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/ggerganov/llama.cpp) (through [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)), [ExLlama](https://github.com/turboderp/exllama), [ExLlamaV2](https://github.com/turboderp/exllamav2), [AutoGPTQ](https://github.com/PanQiWei/AutoGPTQ), [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa), [CTransformers](https://github.com/marella/ctransformers), [AutoAWQ](https://github.com/casper-hansen/AutoAWQ)
 * Dropdown menu for quickly switching between different models
 * LoRA: load and unload LoRAs on the fly, train a new LoRA using QLoRA
 * Precise instruction templates for chat mode, including Llama-2-chat, Alpaca, Vicuna, WizardLM, StableLM, and many others
@@ -169,7 +169,7 @@ cp docker/.env.example .env
 docker compose up --build
 ```
 
-* You need to have docker compose v2.17 or higher installed. See [this guide](https://github.com/oobabooga/text-generation-webui/wiki/09-%E2%80%90-Docker) for instructions.
+* You need to have Docker Compose v2.17 or higher installed. See [this guide](https://github.com/oobabooga/text-generation-webui/wiki/09-%E2%80%90-Docker) for instructions.
 * For additional docker files, check out [this repository](https://github.com/Atinoda/text-generation-webui-docker).
 
 ### Updating the requirements
@@ -298,7 +298,7 @@ Optionally, you can use the following command-line flags:
 | `--xformers`                                | Use xformer's memory efficient attention. This is really old and probably doesn't do anything. |
 | `--sdp-attention`                           | Use PyTorch 2.0's SDP attention. Same as above. |
 | `--trust-remote-code`                       | Set `trust_remote_code=True` while loading the model. Necessary for some models. |
-| `--use_fast`                                | Set `use_fast=True` while loading the tokenizer. |
+| `--no_use_fast`                             | Set use_fast=False while loading the tokenizer (it's True by default). Use this if you have any problems related to use_fast. |
 | `--use_flash_attention_2`                   | Set use_flash_attention_2=True while loading the model. |
 
 #### Accelerate 4-bit
@@ -413,6 +413,8 @@ Optionally, you can use the following command-line flags:
 | `--public-api-id PUBLIC_API_ID`       | Tunnel ID for named Cloudflare Tunnel. Use together with public-api option. |
 | `--api-port API_PORT`                 | The listening port for the API. |
 | `--api-key API_KEY`                   | API authentication key. |
+| `--admin-key ADMIN_KEY`               | API authentication key for admin tasks like loading and unloading models. If not set, will be the same as --api-key. |
+| `--nowebui`                           | Do not launch the Gradio UI. Useful for launching the API in standalone mode. |
 
 #### Multimodal
 
